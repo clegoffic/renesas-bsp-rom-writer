@@ -519,6 +519,9 @@ class board(base):
             return 1
 
     def __select_tty(self):
+        if ("ignore" == self.config_read("select_tty")):
+            self.msg("config file indicates ignore tty select")
+            return
         text = "Your board and PC need to connect\n" + self.tty_connection()
         self.msg(text)
         self.ask_yn(quit=True)
@@ -639,6 +642,9 @@ class board(base):
     def confirm_info(self):
         while 1:
             self.__print_info()
+            if ("ignore" == self.config_read("confirm_info")):
+                self.msg("config file indicates ignore info confirmation")
+                break
             if (self.ask_yn()): break;
 
             # reset all setting
@@ -881,6 +887,12 @@ class guide(base):
     def ask_loop(self):
         list = ["Update all files without asking",
                 "Ask one by one whether to update"]
+        if ("all" == self.board().config_read("update_style")):
+            self.msg("config file indicates update all files without asking")
+            return list.index("Update all files without asking")
+        elif ("ask" == self.board().config_read("update_style")):
+            self.msg("config file indicates ask one by one whether to update")
+            return list.index("Ask one by one whether to update")
         return list.index(self.select("You can select update style", list))
 
     #--------------------
