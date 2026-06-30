@@ -106,6 +106,38 @@
 		-----------------
 
 -------------------------------
+* Inline map (Linux)
+-------------------------------
+	By default the map (which srec is written where) is chosen from the
+	maps shipped with the tool, based on the BSP version you select.
+
+	If you want to write your own set of srec files instead, add
+
+	[map]:inline
+
+	to ".renesas_bsp_rom_writer.<board>" and write the map between
+	[map.begin] and [map.end], using the same syntax as a shipped map
+	file. You can copy a map from board/<board>/config/rom/<os>/map* and
+	adjust it. The version and SoC selection are then skipped, and every
+	listed srec must be present in the ROM directory.
+
+	ex) .renesas_bsp_rom_writer.<board>
+
+		-----------------
+		[tty]:/dev/ttyUSB0
+		[mode]:normal
+		[map]:inline
+		[map.begin]
+		addr_map:"00040000,my_custom_ipl.srec"
+		addr_map:"02680000,u-boot-elf-ironhide.srec"
+		mot_file:"flash_writer_rsip_m_scif_download.srec"
+		[map.end]
+		-----------------
+
+	Remove (or comment) the [map]:inline line to go back to the normal
+	version-based selection.
+
+-------------------------------
 * Can I see the log ?
 -------------------------------
 
