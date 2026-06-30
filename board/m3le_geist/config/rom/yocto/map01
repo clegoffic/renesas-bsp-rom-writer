@@ -1,3 +1,5 @@
+list_version:"5.9.11"
+
 addr_map:"000000,bootparam_sa0.srec"
 addr_map:"040000,bl2-geist.srec"
 addr_map:"180000,cert_header_sa6.srec"

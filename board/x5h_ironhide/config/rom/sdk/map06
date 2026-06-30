@@ -1,3 +1,5 @@
+list_version:"v4.32.0"
+
 addr_map:"00000000,1st_ipl_normal_boot_certificate_a_b.srec"
 addr_map:"00040000,1st_ipl_rsip_m.srec"
 addr_map:"00440000,images_normal_boot_certificate_a.srec"

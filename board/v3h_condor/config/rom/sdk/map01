@@ -1,3 +1,5 @@
+list_version:"v3.3.0 - v3.39.0"
+
 addr_map:"000000,bootparam_sa0.srec"
 addr_map:"040000,icumxa_loader.srec"
 addr_map:"180000,cert_header_sa6.srec"

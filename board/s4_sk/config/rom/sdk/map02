@@ -1,3 +1,5 @@
+list_version:"v3.16.2 - v3.16.9"
+
 addr_map:"0000000,bootparam_sa0.srec"
 addr_map:"0040000,icumx_loader.srec"
 addr_map:"0240000,cert_header_sa9.srec"

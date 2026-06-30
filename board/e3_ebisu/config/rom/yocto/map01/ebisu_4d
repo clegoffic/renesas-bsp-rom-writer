@@ -1,3 +1,5 @@
+list_version:"3.21.0 - 4.1.0"
+
 addr_map:"000000,bootparam_sa0-4d.srec"
 addr_map:"040000,bl2-ebisu-4d.srec"
 addr_map:"180000,cert_header_sa6-4d.srec"

@@ -1,3 +1,5 @@
+list_version:"v4.36.0"
+
 addr_map:"00000000,rsip-m-bl2_cert-normal-boot-a-b.srec"
 addr_map:"00040000,rsip-m-bl2.srec"
 addr_map:"00440000,images_normal_boot_certificate_a.srec"

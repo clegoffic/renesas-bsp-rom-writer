@@ -1,3 +1,5 @@
+list_version:"Pre-Alpha4.0"
+
 addr_map:"0000000,bootparam_sa0.srec"
 addr_map:"0040000,icumxa_loader.srec"
 addr_map:"0240000,cert_header_sa9.srec"

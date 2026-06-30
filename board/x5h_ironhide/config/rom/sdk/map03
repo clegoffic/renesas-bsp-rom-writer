@@ -1,3 +1,5 @@
+list_version:"v4.25.0"
+
 addr_map:"00000000,dummy_cert_for_flash.srec"
 addr_map:"00040000,1st_ipl_rsip_m.srec"
 addr_map:"004C0000,App_SCP_X5H_Sample.srec"

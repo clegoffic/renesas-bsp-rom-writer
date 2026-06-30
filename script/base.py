@@ -481,18 +481,64 @@ class board(base):
         if (self.__mode is not None): self.__select_mode()
 
     #--------------------
+    # rom_maps
+    #
+    # list the map files in the current rom/${os}/ directory, newest
+    # first (map10, map06, ..., map01).
+    #--------------------
+    def __rom_maps(self):
+        rom = self.dir_config_rom()
+        if (not os.path.isdir(rom)):
+            return []
+        maps = [e for e in os.listdir(rom) if e.startswith("map")]
+        maps.sort(reverse=True,
+                  key=lambda m: [int(t) if t.isdigit() else t
+                                 for t in re.findall(r'\d+|\D+', m)])
+        return maps
+
+    #--------------------
+    # map_members
+    #
+    # the srec table file(s) that make up a map: the map file itself, or
+    # every file inside it when the map is a SoC-variant directory.
+    #--------------------
+    def __map_members(self, path):
+        if (os.path.isdir(path)):
+            return ["{}/{}".format(path, f) for f in sorted(os.listdir(path))]
+        return [path]
+
+    #--------------------
+    # version_map
+    #
+    # build the "version -> map" list from the "list_version" line(s)
+    # each map declares; ordered newest first, with no separate index
+    # file.
+    #--------------------
+    def __version_map(self):
+        vmap = []
+        seen = set()
+        for name in self.__rom_maps():
+            for member in self.__map_members(self.dir_config_rom(name)):
+                for ver in self.ttm_array(member, "list_version"):
+                    if (ver in seen):
+                        continue
+                    seen.add(ver)
+                    vmap.append((ver, name))
+        return vmap
+
+    #--------------------
     # select_rom (default)
     #--------------------
     def __select_rom(self):
-        # check rom/${os}/config file
-        while (not os.path.exists(self.dir_config_rom("config"))):
+        # a writable OS is one whose rom/${os}/ directory ships map files
+        while (not self.__rom_maps()):
             self.__rom = self.select("Select write OS", self.runl("ls {}".format(self.dir_config("rom"))))
 
     #--------------------
     # select_ver (default)
     #--------------------
     def __select_ver(self):
-        list_version = self.ttm_array(self.dir_config_rom("config"), "list_version")
+        list_version = [ver for ver, name in self.__version_map()]
         while (not self.__ver in list_version):
             self.__ver = self.select("Select [{}] Version".format(self.rom()), list_version)
 
@@ -500,25 +546,23 @@ class board(base):
     # select_soc (default)
     #--------------------
     def __select_soc(self):
-        list_version = self.ttm_array(self.dir_config_rom("config"), "list_version")
-        list_map     = self.ttm_array(self.dir_config_rom("config"), "list_map")
+        vmap = dict(self.__version_map())
+        if (not self.__ver in vmap):
+            self.error("select version first")
 
-        if (os.path.exists(self.dir_config("soc"))):
+        map = self.dir_config_rom(vmap[self.__ver])
+
+        if (os.path.isdir(map)):
             list_soc = self.ttm_array(self.dir_config("soc"), "list_soc")
-
-            if (not self.__ver in list_version):
-                self.error("select version first")
-
-            dir_map = self.dir_config_rom(list_map[list_version.index(self.__ver)])
             text = "\n".join(self.ttm_array(self.dir_config("soc"), "list_soc_explanation")) + \
                    "\n\nSelect SoC/WS ROM\n"
 
-            while (not os.path.isfile("{}/{}".format(dir_map, self.__soc))):
+            while (not os.path.isfile("{}/{}".format(map, self.__soc))):
                 self.__soc = self.select(text, list_soc)
 
-            self.__map = "{}/{}".format(dir_map, self.__soc)
+            self.__map = "{}/{}".format(map, self.__soc)
         else:
-            self.__map = self.dir_config_rom(list_map[list_version.index(self.__ver)])
+            self.__map = map
 
         for name in self.runl('grep -oE "^[a-z_]+_map" {} | sort -u'.format(self.__map)):
             map = config_map(self.__map, name)
