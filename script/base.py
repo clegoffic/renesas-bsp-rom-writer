@@ -471,9 +471,17 @@ class board(base):
     # if default select_xx() was not good match
     #--------------------
     def setup(self):
-        if (self.__rom  is not None): self.__select_rom()
-        if (self.__ver  is not None): self.__select_ver()
-        if (self.__soc  is not None): self.__select_soc()
+        map = self.config_read("map").strip()
+        if (map == "inline"):
+            # the map is written directly in the config file; skip the
+            # version/SoC selection that would pick a shipped map file
+            self.__select_inline_map()
+        elif (map != ""):
+            self.error("[map](= {}) is unknown; use 'inline' or remove it".format(map))
+        else:
+            if (self.__rom is not None): self.__select_rom()
+            if (self.__ver is not None): self.__select_ver()
+            if (self.__soc is not None): self.__select_soc()
         if (self.__tty  is not None): self.__select_tty()
         if (self.__mode is not None): self.__select_mode()
 
@@ -598,6 +606,30 @@ class board(base):
 
         if (len(err)):
             self.error("These files are required, but not found.\n\n" + err)
+
+    #--------------------
+    # select_inline_map
+    #
+    # [map]:inline lets the user write the map directly in the config
+    # file, between [map.begin] and [map.end], using the exact map-file
+    # syntax (addr_map:"<addr>,<srec>", emmc_map, ufs_map, mot_file) so a
+    # shipped map## file can be copied in and adjusted. Only the lines
+    # inside the block are used.
+    #--------------------
+    def __select_inline_map(self):
+        with open(self.config_file()) as f:
+            lines = f.read().splitlines()
+        marks = [l.strip() for l in lines]
+        if ("[map.begin]" not in marks or "[map.end]" not in marks or
+            marks.index("[map.begin]") > marks.index("[map.end]")):
+            self.error("[map]:inline needs the map between [map.begin] and [map.end]")
+
+        begin = marks.index("[map.begin]")
+        end   = marks.index("[map.end]")
+        self.__map = self.config_file()
+        self.__build_addr_map(lines[begin + 1:end])
+        if (not self.addr_map()):
+            self.error("no map directives (addr_map/...) between [map.begin] and [map.end]")
 
     #--------------------
     # select_tty (default)
