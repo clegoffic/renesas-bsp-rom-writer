@@ -244,26 +244,23 @@ class config_map:
     #--------------------
     # __init__
     #--------------------
-    def __init__(self, file, map_name):
+    def __init__(self, entries):
         #
-        # read addr_map file
+        # build the map from "<addr>,<srec>" entries
         #
-        # addr_map:"000000,bootparam_sa0.srec"
-        # addr_map:"040000,bl2-salvator-x.srec"
-        # addr_map:...
-        #
-
+        #   addr_map:"000000,bootparam_sa0.srec"  ->  "000000,bootparam_sa0.srec"
         #
         # srec file not exist if ["addr"] was None
         #
         self.__map = []
         b = base()
-        map = b.ttm_array(file, map_name)
-        for m in map:
+        for m in entries:
             am = m.split(',')
+            if (len(am) != 2 or am[0] == "" or am[1] == ""):
+                b.error('map entry must be "<addr>,<file.srec>": {}'.format(m))
             addr = None
             if (os.path.exists("{}/{}".format(b.cwd(), am[1]))):
-                addr = b.run("head -n 2 {}/{} | grep S3 | head -n 1 | cut -c5-12".format(b.cwd(), am[1]))
+                addr = b.run('head -n 2 "{}/{}" | grep S3 | head -n 1 | cut -c5-12'.format(b.cwd(), am[1]))
             self.__map.append({"addr":addr,
                                "save":am[0],
                                "srec":am[1]})
@@ -564,8 +561,32 @@ class board(base):
         else:
             self.__map = map
 
-        for name in self.runl('grep -oE "^[a-z_]+_map" {} | sort -u'.format(self.__map)):
-            map = config_map(self.__map, name)
+        with open(self.__map) as f:
+            self.__build_addr_map(f.read().splitlines())
+
+    #--------------------
+    # build_addr_map
+    #
+    # build the address map from a list of config lines: collect every
+    # "*_map" directive (addr_map, emmc_map, ufs_map, ...), build a
+    # config_map for each, and check the referenced srec files exist.
+    #--------------------
+    def __build_addr_map(self, lines):
+        maps = {}
+        for line in lines:
+            line = line.strip()
+            if (':' not in line):
+                continue
+            key, value = line.split(':', 1)
+            key = key.strip()
+            if (not key.endswith("_map")):
+                continue
+            value = re.sub(r'^ *"', '', value)
+            value = re.sub(r'"$',   '', value)
+            maps.setdefault(key, []).append(value)
+
+        for name, entries in maps.items():
+            map = config_map(entries)
             if (map.len()):
                 self.__addr_map[name] = map
 
