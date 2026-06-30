@@ -73,11 +73,42 @@ class base:
         return self.tolist(self.run(command));
 
     #--------------------
+    # kv_read
+    #
+    # read a "key:value" config file into an ordered list of (key, value)
+    # pairs. blank lines and lines without ':' are ignored. the value is
+    # returned verbatim (quotes/brackets are left for the caller to strip).
+    #--------------------
+    def kv_read(self, file):
+        pairs = []
+        try:
+            with open(file) as f:
+                content = f.read()
+        except OSError:
+            return pairs
+        for line in content.splitlines():
+            line = line.strip()
+            if (not line or ':' not in line):
+                continue
+            key, value = line.split(':', 1)
+            pairs.append((key.strip(), value))
+        return pairs
+
+    #--------------------
     # ttm_array
     # read TeraTerm array
+    #
+    # tag:"value"  ->  ["value", ...]  (in file order)
     #--------------------
     def ttm_array(self, file, tag):
-        return self.runl('grep -w "^{}" {} | sed -e "s/^{}: *\\"//g" | sed -e "s/\\"$//g"'.format(tag, file, tag))
+        values = []
+        for key, value in self.kv_read(file):
+            if (key != tag):
+                continue
+            value = re.sub(r'^ *"', '', value)	# drop leading spaces + opening quote
+            value = re.sub(r'"$',   '', value)	# drop trailing quote
+            values.append(value)
+        return values
 
     #--------------------
     # input
