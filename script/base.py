@@ -416,15 +416,30 @@ class board(base):
         return "{}/{}".format(self.cwd(), self.__config)
 
     def config_read(self, tag):
-        return self.run(r'grep "^\[{}\]:" {} 2>/dev/null | cut -d : -f 2-'.format(tag, self.config_file()))
+        bracket = "[{}]".format(tag)
+        for key, value in self.kv_read(self.config_file()):
+            if (key == bracket):
+                return value
+        return ""
 
     def config_write(self, tag, data):
-        tmp = "/tmp/renesas-bsp-rom-writer-config-{}".format(os.getpid())
+        bracket = "[{}]".format(tag)
+        lines = []
         if (os.path.exists(self.config_file())):
-            self.run(r'grep -v "^\[{}\]:" {} > {}'.format(tag, self.config_file(), tmp))
-        self.run("echo \"[{}]:{}\" >> {}".format(tag, data, tmp))
-        self.run("mv -f {} {}".format(tmp, self.config_file()))
-        if (not os.path.exists(self.config_file())):
+            with open(self.config_file()) as f:
+                content = f.read()
+            for line in content.splitlines():
+                if (':' in line and line.split(':', 1)[0].strip() == bracket):
+                    continue
+                lines.append(line)
+        lines.append("{}:{}".format(bracket, data))
+
+        tmp = self.config_file() + ".tmp"
+        try:
+            with open(tmp, "w") as f:
+                f.write("\n".join(lines) + "\n")
+            os.replace(tmp, self.config_file())
+        except OSError:
             self.error("cann't save configs")
 
     def config_load(self):
