@@ -474,7 +474,7 @@ class board(base):
         else:
             self.__map = self.dir_config_rom(list_map[list_version.index(self.__ver)])
 
-        for name in ["addr_map", "emmc_map", "ufs_map"]:
+        for name in self.runl('grep -oE "^[a-z_]+_map" {} | sort -u'.format(self.__map)):
             map = config_map(self.__map, name)
             if (map.len()):
                 self.__addr_map[name] = map
